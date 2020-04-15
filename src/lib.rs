@@ -86,20 +86,23 @@ impl<T> ExtendedVnNeighborhood<T> {
 }
 
 pub trait Automaton {
+    // TODO: maybe restrict this trait to types that implement a custom,
+    // indexing operator and then use it instead of custom getters and setters.
+
     type State: Copy;
 
-    // fn get_neighborhood_array(&self, idx: (usize, usize)) -> Array2<Option<Self::State>> {
-    //     let mut neighborhood = Array2::<Option<Self::State>>::from_elem((3, 3), None);
-    //     neighborhood
-    // }
-
-    // Grid helpers, implement these on your automaton
+    // Grid helpers, implement these on your automaton.
     fn cell_at(&self, idx: (usize, usize)) -> Self::State;
     fn nrows(&self) -> usize;
     fn ncols(&self) -> usize;
 
     fn step(&self) -> &Self {
         // TODO: advance all cells.
+        // Should look like this:
+        // for (idx, cell) in self.grid.indexed_iter() {
+        //     let neighborhood = self.get_*_neighborhood(idx);
+        //     self.set_cell_at(idx, get_next_state(self.cell_at(idx), neighborhood));
+        // }
         self
     }
     fn get_moore_neighborhood(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
