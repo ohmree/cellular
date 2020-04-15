@@ -102,7 +102,7 @@ pub trait Automaton {
     // Returns the next iteration of the automaton
     fn step(&self) -> Self;
 
-    fn moore_neighborhood_at(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
+    fn moore_neighborhood_of(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut ne: Option<Self::State> = None;
@@ -146,7 +146,7 @@ pub trait Automaton {
         }
     }
 
-    fn vn_neighborhood_at(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
+    fn vn_neighborhood_of(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut e: Option<Self::State> = None;
@@ -169,7 +169,7 @@ pub trait Automaton {
         VonNeumannNeighborhood::<Self::State> { n, e, s, w }
     }
 
-    fn extended_vn_neighborhood_at(
+    fn extended_vn_neighborhood_of(
         &self,
         idx: (usize, usize),
     ) -> ExtendedVnNeighborhood<Self::State> {
