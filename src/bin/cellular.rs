@@ -25,9 +25,9 @@ pub struct GameOfLife {
 impl GameOfLife {
     pub fn new(size: (usize, usize)) -> Self {
         use GameState::*;
-        GameOfLife {
-            grid: Array2::<GameState>::from_elem(size, Dead),
-        }
+        let mut grid = Array2::<GameState>::from_elem(size, Dead);
+        grid[(0, 0)] = GameState::Alive;
+        GameOfLife { grid }
     }
 
     fn print(&self) {
@@ -43,9 +43,15 @@ impl GameOfLife {
 impl Automaton for GameOfLife {
     type State = GameState;
 
-    fn cell_at(&self, idx: (usize, usize)) -> Self::State { self.grid[idx] }
-    fn nrows(&self) -> usize { self.grid.nrows() }
-    fn ncols(&self) -> usize { self.grid.ncols() }
+    fn cell_at(&self, idx: (usize, usize)) -> Self::State {
+        self.grid[idx]
+    }
+    fn nrows(&self) -> usize {
+        self.grid.nrows()
+    }
+    fn ncols(&self) -> usize {
+        self.grid.ncols()
+    }
 }
 
 pub fn main() {
