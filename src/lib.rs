@@ -93,6 +93,7 @@ pub trait Automaton {
 
     // Grid helpers, implement these on your automaton.
     fn cell_at(&self, idx: (usize, usize)) -> Self::State;
+    fn set_cell_at(&mut self, idx: (usize, usize), value: Self::State);
     fn nrows(&self) -> usize;
     fn ncols(&self) -> usize;
 

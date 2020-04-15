@@ -46,6 +46,9 @@ impl Automaton for GameOfLife {
     fn cell_at(&self, idx: (usize, usize)) -> Self::State {
         self.grid[idx]
     }
+    fn set_cell_at(&mut self, idx: (usize, usize), value: Self::State) {
+        self.grid[idx] = value
+    }
     fn nrows(&self) -> usize {
         self.grid.nrows()
     }
@@ -55,7 +58,7 @@ impl Automaton for GameOfLife {
 }
 
 pub fn main() {
-    let game = GameOfLife::new((10, 10));
+    let mut game = GameOfLife::new((10, 10));
     // game.step();
     game.print();
 }
