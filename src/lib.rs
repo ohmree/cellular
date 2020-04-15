@@ -93,20 +93,16 @@ pub trait Automaton {
 
     // Grid helpers, implement these on your automaton.
     fn cell_at(&self, idx: (usize, usize)) -> Self::State;
-    fn set_cell_at(&mut self, idx: (usize, usize), value: Self::State);
+    // fn set_cell_at(&mut self, idx: (usize, usize), value: Self::State);
     fn nrows(&self) -> usize;
     fn ncols(&self) -> usize;
 
-    fn step(&self) -> &Self {
-        // TODO: advance all cells.
-        // Should look like this:
-        // for (idx, cell) in self.grid.indexed_iter() {
-        //     let neighborhood = self.get_*_neighborhood(idx);
-        //     self.set_cell_at(idx, get_next_state(self.cell_at(idx), neighborhood));
-        // }
-        self
-    }
-    fn get_moore_neighborhood(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
+    // Takes an index, returns the next state for the cell at the index.
+    fn next_state_at(&self, idx: (usize, usize)) -> Self::State;
+    // Returns the next iteration of the automaton
+    fn step(&self) -> Self;
+
+    fn moore_neighborhood_at(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut ne: Option<Self::State> = None;
@@ -150,7 +146,7 @@ pub trait Automaton {
         }
     }
 
-    fn get_vn_neighborhood(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
+    fn vn_neighborhood_at(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut e: Option<Self::State> = None;
@@ -173,7 +169,7 @@ pub trait Automaton {
         VonNeumannNeighborhood::<Self::State> { n, e, s, w }
     }
 
-    fn get_extended_vn_neighborhood(
+    fn extended_vn_neighborhood_at(
         &self,
         idx: (usize, usize),
     ) -> ExtendedVnNeighborhood<Self::State> {
