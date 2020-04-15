@@ -2,6 +2,10 @@
 // ###
 // ###
 // ###
+pub trait Neighborhood {
+    fn empty() -> Self;
+}
+
 #[derive(Copy, Debug, Clone)]
 pub struct MooreNeighborhood<T> {
     pub n: Option<T>,
@@ -14,8 +18,8 @@ pub struct MooreNeighborhood<T> {
     pub nw: Option<T>,
 }
 
-impl<T> MooreNeighborhood<T> {
-    pub fn empty() -> Self {
+impl<T> Neighborhood for MooreNeighborhood<T> {
+    fn empty() -> Self {
         Self {
             n: None,
             ne: None,
@@ -41,8 +45,8 @@ pub struct VonNeumannNeighborhood<T> {
     pub w: Option<T>,
 }
 
-impl<T> VonNeumannNeighborhood<T> {
-    pub fn empty() -> Self {
+impl<T> Neighborhood for VonNeumannNeighborhood<T> {
+    fn empty() -> Self {
         Self {
             n: None,
             e: None,
@@ -70,8 +74,8 @@ pub struct ExtendedVnNeighborhood<T> {
     pub w2: Option<T>,
 }
 
-impl<T> ExtendedVnNeighborhood<T> {
-    pub fn empty() -> Self {
+impl<T> Neighborhood for ExtendedVnNeighborhood<T> {
+    fn empty() -> Self {
         Self {
             n: None,
             n2: None,
@@ -98,11 +102,11 @@ pub trait Automaton {
     fn ncols(&self) -> usize;
 
     // Takes an index, returns the next state for the cell at the index.
-    fn next_state_at(&self, idx: (usize, usize)) -> Self::State;
+    fn next_state_of<T: Neighborhood>(&self, neighborhood: T) -> Self::State;
     // Returns the next iteration of the automaton
     fn step(&self) -> Self;
 
-    fn moore_neighborhood_of(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
+    fn moore_neighborhood_at(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut ne: Option<Self::State> = None;
@@ -146,7 +150,7 @@ pub trait Automaton {
         }
     }
 
-    fn vn_neighborhood_of(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
+    fn vn_neighborhood_at(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
         let (row, col) = idx;
         let mut n: Option<Self::State> = None;
         let mut e: Option<Self::State> = None;
@@ -169,7 +173,7 @@ pub trait Automaton {
         VonNeumannNeighborhood::<Self::State> { n, e, s, w }
     }
 
-    fn extended_vn_neighborhood_of(
+    fn extended_vn_neighborhood_at(
         &self,
         idx: (usize, usize),
     ) -> ExtendedVnNeighborhood<Self::State> {
