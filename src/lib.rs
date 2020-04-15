@@ -114,16 +114,16 @@ pub trait Automaton {
         let mut nw: Option<Self::State> = None;
 
         if row != 0 {
-            e = Some(self.cell_at((row + 1, col)));
+            n = Some(self.cell_at((row + 1, col)));
         }
         if row != self.nrows() {
-            w = Some(self.cell_at((row - 1, col)));
+            s = Some(self.cell_at((row - 1, col)));
         }
         if col != 0 {
-            n = Some(self.cell_at((row, col - 1)));
+            w = Some(self.cell_at((row, col - 1)));
         }
         if col != self.ncols() {
-            s = Some(self.cell_at((row, col + 1)));
+            e = Some(self.cell_at((row, col + 1)));
         }
         if n.is_some() {
             if w.is_some() { nw = Some(self.cell_at((row - 1, col - 1))) }
@@ -154,16 +154,16 @@ pub trait Automaton {
         let mut w: Option<Self::State> = None;
 
         if row != 0 {
-            e = Some(self.cell_at((row + 1, col)));
+            n = Some(self.cell_at((row + 1, col)));
         }
         if row != self.nrows() {
-            w = Some(self.cell_at((row - 1, col)));
+            s = Some(self.cell_at((row - 1, col)));
         }
         if col != 0 {
-            n = Some(self.cell_at((row, col - 1)));
+            w = Some(self.cell_at((row, col - 1)));
         }
         if col != self.ncols() {
-            s = Some(self.cell_at((row, col + 1)));
+            e = Some(self.cell_at((row, col + 1)));
         }
 
         VonNeumannNeighborhood::<Self::State> { n, e, s, w }
@@ -184,28 +184,28 @@ pub trait Automaton {
         let mut w2: Option<Self::State> = None;
 
         if row != 0 {
-            e = Some(self.cell_at((row + 1, col)));
-        }
-        if row != self.nrows() {
-            w = Some(self.cell_at((row - 1, col)));
-        }
-        if col != 0 {
-            n = Some(self.cell_at((row, col - 1)));
-        }
-        if col != self.ncols() {
-            s = Some(self.cell_at((row, col + 1)));
+            n = Some(self.cell_at((row + 1, col)));
         }
         if row != 1 {
-            e2 = Some(self.cell_at((row + 2, col)));
+            n2 = Some(self.cell_at((row + 2, col)));
+        }
+        if row != self.nrows() {
+            s = Some(self.cell_at((row - 1, col)));
         }
         if row != self.nrows() - 1 {
-            w2 = Some(self.cell_at((row - 2, col)));
+            s2 = Some(self.cell_at((row - 2, col)));
+        }
+        if col != 0 {
+            w = Some(self.cell_at((row, col - 1)));
         }
         if col != 1 {
-            n2 = Some(self.cell_at((row, col - 2)));
+            w2 = Some(self.cell_at((row, col - 2)));
+        }
+        if col != self.ncols() {
+            e = Some(self.cell_at((row, col + 1)));
         }
         if col != self.ncols() - 1 {
-            s2 = Some(self.cell_at((row, col + 2)));
+            e2 = Some(self.cell_at((row, col + 2)));
         }
 
         ExtendedVnNeighborhood::<Self::State> { n, n2, e, e2, s, s2, w, w2 }
