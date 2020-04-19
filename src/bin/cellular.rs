@@ -1,4 +1,4 @@
-use cellular::{Automaton, Neighborhood};
+use cellular::{Automaton, Neighborhood, MooreNeighborhood};
 use ndarray::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -8,12 +8,20 @@ pub enum GameState {
 }
 
 impl GameState {
-    pub fn symbol(self) -> char {
+    pub fn symbol(&self) -> char {
         use GameState::*;
         match self {
             Alive => '#',
             Dead => ' ',
         }
+    }
+
+    pub fn is_alive(&self) -> bool {
+        matches!(self, Alive)
+    }
+
+    pub fn is_dead(&self) -> bool {
+        matches!(self, Dead)
     }
 }
 
@@ -46,25 +54,12 @@ impl GameOfLife {
 impl Automaton for GameOfLife {
     type State = GameState;
 
-    fn cell_at(&self, idx: (usize, usize)) -> Self::State {
-        self.grid[idx]
-    }
-
-    fn nrows(&self) -> usize {
-        self.grid.nrows()
-    }
-
-    fn ncols(&self) -> usize {
-        self.grid.ncols()
-    }
+    fn get_grid(&self) -> Array2<Self::State> { self.grid }
 
     fn next_state_of<T: Neighborhood>(&self, neighborhood: T) -> Self::State {
-        // FIXME: this line doesn't work for some reason:
-        // use Self::State::*;
-        // neither does this one:
-        // use Self::State;
         use GameState::*;
-        // TODO: implement game of life state handling
+        let cells = neighborhood.existing_cells();
+        let living_neighbors = cells.iter().filter(|c| c.is_alive());
         Alive
     }
 
@@ -83,15 +78,13 @@ impl Automaton for GameOfLife {
         // }
 
         // FIXME: the map operation will probably fail on non-square grid sizes.
-        let grid: Array2<GameState> = (0..self.nrows()).zip(0..self.ncols())
-            .map(|idx| self.next_state_of(self.moore_neighborhood_at(idx)))
-            .collect();
+        // let grid: Array2<GameState> = (0..self.nrows()).zip(0..self.ncols())
+        //     .map(|idx| self.next_state_of(self.moore_neighborhood_at(idx)))
+        //     .collect::<Array2<GameState>>();
 
-        Self::from_grid(grid)
+        // Self::from_grid(grid)
 
-        // for (idx, cell) in self.grid.indexed_iter() {
-        //     let neighborhood = self.moore_neighborhood_at(idx);
-        // }
+        *self
     }
 }
 

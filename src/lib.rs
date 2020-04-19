@@ -1,11 +1,25 @@
+use ndarray::prelude::*;
+
+// TODO: maybe use hashmaps instead of hard-coded structs.
+pub trait Neighborhood {
+    type State: Copy;
+    fn empty() -> Self;
+    // This is what the hash version could look like:
+    // fn as_hash(&self) -> HashMap<&str, Self::State>;
+    // Or maybe even without 3 separate structs and a trait.
+
+    // We might be able to generate this using a macro.
+    fn as_vec(&self) -> Vec<Option<Self::State>>;
+    fn existing_cells(&self) -> Vec<Self::State> {
+        let maybe_cells: Vec<Option<Self::State>> = self.as_vec();
+        maybe_cells.into_iter().flatten().collect()
+    }
+}
+
 // Moore neighborhood:
 // ###
 // ###
 // ###
-pub trait Neighborhood {
-    fn empty() -> Self;
-}
-
 #[derive(Copy, Debug, Clone)]
 pub struct MooreNeighborhood<T> {
     pub n: Option<T>,
@@ -18,7 +32,9 @@ pub struct MooreNeighborhood<T> {
     pub nw: Option<T>,
 }
 
-impl<T> Neighborhood for MooreNeighborhood<T> {
+impl<T: Copy> Neighborhood for MooreNeighborhood<T> {
+    type State = T;
+
     fn empty() -> Self {
         Self {
             n: None,
@@ -30,6 +46,12 @@ impl<T> Neighborhood for MooreNeighborhood<T> {
             w: None,
             nw: None,
         }
+    }
+
+    fn as_vec(&self) -> Vec<Option<T>> {
+        vec![
+            self.n, self.ne, self.e, self.se, self.s, self.sw, self.w, self.nw,
+        ]
     }
 }
 
@@ -45,7 +67,9 @@ pub struct VonNeumannNeighborhood<T> {
     pub w: Option<T>,
 }
 
-impl<T> Neighborhood for VonNeumannNeighborhood<T> {
+impl<T: Copy> Neighborhood for VonNeumannNeighborhood<T> {
+    type State = T;
+
     fn empty() -> Self {
         Self {
             n: None,
@@ -53,6 +77,9 @@ impl<T> Neighborhood for VonNeumannNeighborhood<T> {
             s: None,
             w: None,
         }
+    }
+    fn as_vec(&self) -> Vec<Option<Self::State>> {
+        vec![self.n, self.e, self.s, self.w]
     }
 }
 
@@ -74,7 +101,9 @@ pub struct ExtendedVnNeighborhood<T> {
     pub w2: Option<T>,
 }
 
-impl<T> Neighborhood for ExtendedVnNeighborhood<T> {
+impl<T: Copy> Neighborhood for ExtendedVnNeighborhood<T> {
+    type State = T;
+
     fn empty() -> Self {
         Self {
             n: None,
@@ -87,6 +116,11 @@ impl<T> Neighborhood for ExtendedVnNeighborhood<T> {
             w2: None,
         }
     }
+    fn as_vec(&self) -> Vec<Option<Self::State>> {
+        vec![
+            self.n, self.n2, self.e, self.e2, self.s, self.s2, self.w, self.w2,
+        ]
+    }
 }
 
 pub trait Automaton {
@@ -95,11 +129,10 @@ pub trait Automaton {
 
     type State: Copy;
 
-    // Grid helpers, implement these on your automaton.
-    fn cell_at(&self, idx: (usize, usize)) -> Self::State;
-    // fn set_cell_at(&mut self, idx: (usize, usize), value: Self::State);
-    fn nrows(&self) -> usize;
-    fn ncols(&self) -> usize;
+    // The 2D array where the automaton state is stored.
+    // I think this returns a copy of the array, which
+    // might be good since I'm trying to do this functionally?
+    fn get_grid(&self) -> Array2<Self::State>;
 
     // Takes an index, returns the next state for the cell at the index.
     fn next_state_of<T: Neighborhood>(&self, neighborhood: T) -> Self::State;
@@ -107,111 +140,112 @@ pub trait Automaton {
     fn step(&self) -> Self;
 
     fn moore_neighborhood_at(&self, idx: (usize, usize)) -> MooreNeighborhood<Self::State> {
+        let grid = &self.get_grid();
         let (row, col) = idx;
-        let mut n: Option<Self::State> = None;
-        let mut ne: Option<Self::State> = None;
-        let mut e: Option<Self::State> = None;
-        let mut se: Option<Self::State> = None;
-        let mut s: Option<Self::State> = None;
-        let mut sw: Option<Self::State> = None;
-        let mut w: Option<Self::State> = None;
-        let mut nw: Option<Self::State> = None;
+        let mut ret = MooreNeighborhood::<Self::State>::empty();
 
         if row != 0 {
-            n = Some(self.cell_at((row + 1, col)));
-        }
-        if row != self.nrows() {
-            s = Some(self.cell_at((row - 1, col)));
-        }
-        if col != 0 {
-            w = Some(self.cell_at((row, col - 1)));
-        }
-        if col != self.ncols() {
-            e = Some(self.cell_at((row, col + 1)));
-        }
-        if n.is_some() {
-            if w.is_some() { nw = Some(self.cell_at((row - 1, col - 1))) }
-            if e.is_some() { ne = Some(self.cell_at((row + 1, col - 1))) }
-        }
-        if s.is_some() {
-            if w.is_some() { sw = Some(self.cell_at((row - 1, col + 1))) }
-            if e.is_some() { se = Some(self.cell_at((row + 1, col + 1))) }
+            ret.n = Some(grid[(row + 1, col)]);
         }
 
-        MooreNeighborhood::<Self::State> {
-            n,
-            ne,
-            e,
-            se,
-            s,
-            sw,
-            w,
-            nw,
+        if row != grid.nrows() {
+            ret.s = Some(grid[(row - 1, col)]);
         }
+
+        if col != 0 {
+            ret.w = Some(grid[(row, col - 1)]);
+        }
+
+        if col != grid.ncols() {
+            ret.e = Some(grid[(row, col + 1)]);
+        }
+
+        // TODO: find out a less fugly way to implement this logic.
+        if ret.n.is_some() {
+            if ret.w.is_some() {
+                ret.nw = Some(grid[(row - 1, col - 1)])
+            }
+            if ret.e.is_some() {
+                ret.ne = Some(grid[(row + 1, col - 1)])
+            }
+        }
+
+        if ret.s.is_some() {
+            if ret.w.is_some() {
+                ret.sw = Some(grid[(row - 1, col + 1)])
+            }
+            if ret.e.is_some() {
+                ret.se = Some(grid[(row + 1, col + 1)])
+            }
+        }
+
+        ret
     }
 
     fn vn_neighborhood_at(&self, idx: (usize, usize)) -> VonNeumannNeighborhood<Self::State> {
+        let grid = &self.get_grid();
         let (row, col) = idx;
-        let mut n: Option<Self::State> = None;
-        let mut e: Option<Self::State> = None;
-        let mut s: Option<Self::State> = None;
-        let mut w: Option<Self::State> = None;
+        let mut ret = VonNeumannNeighborhood::<Self::State>::empty();
 
         if row != 0 {
-            n = Some(self.cell_at((row + 1, col)));
-        }
-        if row != self.nrows() {
-            s = Some(self.cell_at((row - 1, col)));
-        }
-        if col != 0 {
-            w = Some(self.cell_at((row, col - 1)));
-        }
-        if col != self.ncols() {
-            e = Some(self.cell_at((row, col + 1)));
+            ret.n = Some(grid[(row + 1, col)]);
         }
 
-        VonNeumannNeighborhood::<Self::State> { n, e, s, w }
+        if row != grid.nrows() {
+            ret.s = Some(grid[(row - 1, col)]);
+        }
+
+        if col != 0 {
+            ret.w = Some(grid[(row, col - 1)]);
+        }
+
+        if col != grid.ncols() {
+            ret.e = Some(grid[(row, col + 1)]);
+        }
+
+        ret
     }
 
     fn extended_vn_neighborhood_at(
         &self,
         idx: (usize, usize),
     ) -> ExtendedVnNeighborhood<Self::State> {
+        let grid = &self.get_grid();
         let (row, col) = idx;
-        let mut n: Option<Self::State> = None;
-        let mut n2: Option<Self::State> = None;
-        let mut e: Option<Self::State> = None;
-        let mut e2: Option<Self::State> = None;
-        let mut s: Option<Self::State> = None;
-        let mut s2: Option<Self::State> = None;
-        let mut w: Option<Self::State> = None;
-        let mut w2: Option<Self::State> = None;
+        let mut ret = ExtendedVnNeighborhood::<Self::State>::empty();
 
         if row != 0 {
-            n = Some(self.cell_at((row + 1, col)));
-        }
-        if row != 1 {
-            n2 = Some(self.cell_at((row + 2, col)));
-        }
-        if row != self.nrows() {
-            s = Some(self.cell_at((row - 1, col)));
-        }
-        if row != self.nrows() - 1 {
-            s2 = Some(self.cell_at((row - 2, col)));
-        }
-        if col != 0 {
-            w = Some(self.cell_at((row, col - 1)));
-        }
-        if col != 1 {
-            w2 = Some(self.cell_at((row, col - 2)));
-        }
-        if col != self.ncols() {
-            e = Some(self.cell_at((row, col + 1)));
-        }
-        if col != self.ncols() - 1 {
-            e2 = Some(self.cell_at((row, col + 2)));
+            ret.n = Some(grid[(row + 1, col)]);
         }
 
-        ExtendedVnNeighborhood::<Self::State> { n, n2, e, e2, s, s2, w, w2 }
+        if row != 1 {
+            ret.n2 = Some(grid[(row + 2, col)]);
+        }
+
+        if row != grid.nrows() {
+            ret.s = Some(grid[(row - 1, col)]);
+        }
+
+        if row != grid.nrows() - 1 {
+            ret.s2 = Some(grid[(row - 2, col)]);
+        }
+
+        if col != 0 {
+            ret.w = Some(grid[(row, col - 1)]);
+        }
+
+        if col != 1 {
+            ret.w2 = Some(grid[(row, col - 2)]);
+        }
+
+        if col != grid.ncols() {
+            ret.e = Some(grid[(row, col + 1)]);
+        }
+
+        if col != grid.ncols() - 1 {
+            ret.e2 = Some(grid[(row, col + 2)]);
+        }
+
+        ret
     }
 }
