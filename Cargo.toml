@@ -9,3 +9,7 @@ edition = "2018"
 [dependencies]
 ndarray = "0.13.0"
 conrod = "0.61.1"
+
+[features]
+winit = ["conrod/winit"]
+glium = ["conrod/glium"]
