@@ -9,8 +9,9 @@ license = "MIT"
 
 [dependencies]
 ndarray = "0.13.0"
-conrod = "0.61.1"
+# conrod = "0.61.1"
+im = "14.3.0"
 
-[features]
-winit = ["conrod/winit"]
-glium = ["conrod/glium"]
+# [features]
+# winit = ["conrod/winit"]
+# glium = ["conrod/glium"]

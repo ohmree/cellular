@@ -1,5 +1,6 @@
 use ndarray::prelude::*;
-use std::{fmt::Debug, collections::HashMap};
+use std::fmt::Debug;
+use im::HashMap;
 
 #[derive(Debug, Clone, Copy)]
 pub enum GameState {
@@ -13,7 +14,7 @@ pub trait Automaton {
     // The 2D array where the automaton state is stored.
     // I think this returns a copy of the array, which
     // might be good since I'm trying to do this functionally?
-    fn get_view(&self) -> ArrayView2<Self::State>;
+    fn grid_view(&self) -> ArrayView2<Self::State>;
 
     // Returns a new struct with the given array.
     fn from_array2(grid: Array2<Self::State>) -> Self;
@@ -27,7 +28,7 @@ pub trait Automaton {
         Self: std::marker::Sized,
     {
         // TODO: figure out exactly how to do this, I'm dumb.
-        let view = self.get_view();
+        let view = self.grid_view();
         let cells = view
             .indexed_iter()
             .map(|(idx, _)| self.next_state_of(idx))
@@ -39,26 +40,24 @@ pub trait Automaton {
     }
 
     fn moore_neighborhood_of(&self, idx: (usize, usize)) -> HashMap<&str, Self::State> {
-        let grid = self.get_view();
+        let grid = self.grid_view();
         let (row, col) = idx;
-        let nrows = grid.nrows();
-        let ncols = grid.ncols();
-        let mut ret = HashMap::with_capacity(8);
+        let mut ret = HashMap::new();
 
-        if row != 0 {
-            ret.insert("n", grid[(row - 1, col)]);
+        if row >= 1 {
+            ret.insert("w", grid[(row - 1, col)]);
         }
 
-        if row != grid.nrows() {
-            ret.insert("s", grid[(row + 1, col)]);
+        if row < grid.nrows() - 1 {
+            ret.insert("e", grid[(row + 1, col)]);
         }
 
-        if col != 0 {
-            ret.insert("w", grid[(row, col - 1)]);
+        if col >= 1 {
+            ret.insert("n", grid[(row, col - 1)]);
         }
 
-        if col != grid.ncols() {
-            ret.insert("e", grid[(row, col + 1)]);
+        if col < grid.ncols() - 1 {
+            ret.insert("s", grid[(row, col + 1)]);
         }
 
         // TODO: find out a less fugly way to implement this logic.
@@ -84,64 +83,64 @@ pub trait Automaton {
     }
 
     fn vn_neighborhood_of(&self, idx: (usize, usize)) -> HashMap<&str, Self::State> {
-        let grid = &self.get_view();
+        let grid = &self.grid_view();
         let (row, col) = idx;
-        let mut ret = HashMap::with_capacity(4);
+        let mut ret = HashMap::new();
 
-        if row != 0 {
-            ret.insert("n", grid[(row + 1, col)]);
+        if row >= 1 {
+            ret.insert("w", grid[(row - 1, col)]);
         }
 
-        if row != grid.nrows() {
-            ret.insert("s", grid[(row - 1, col)]);
+        if row < grid.nrows() - 1 {
+            ret.insert("e", grid[(row + 1, col)]);
         }
 
-        if col != 0 {
-            ret.insert("w", grid[(row, col - 1)]);
+        if col <= 1 {
+            ret.insert("n", grid[(row, col - 1)]);
         }
 
-        if col != grid.ncols() {
-            ret.insert("e", grid[(row, col + 1)]);
+        if col > grid.ncols() - 1 {
+            ret.insert("s", grid[(row, col + 1)]);
         }
 
         ret
     }
 
     fn extended_vn_neighborhood_of(&self, idx: (usize, usize)) -> HashMap<&str, Self::State> {
-        let grid = &self.get_view();
+        let grid = &self.grid_view();
         let (row, col) = idx;
-        let mut ret = HashMap::with_capacity(8);
+        let mut ret = HashMap::new();
 
-        if row != 0 {
-            ret.insert("n", grid[(row + 1, col)]);
+        if row >= 1 {
+            ret.insert("w", grid[(row - 1, col)]);
         }
 
-        if row != 1 {
-            ret.insert("n2", grid[(row + 2, col)]);
+        if row >= 2 {
+            ret.insert("w2", grid[(row - 2, col)]);
         }
 
-        if row != grid.nrows() {
-            ret.insert("s", grid[(row - 1, col)]);
+        if row < grid.nrows() - 1 {
+            ret.insert("e", grid[(row + 1, col)]);
         }
 
-        if row != grid.nrows() - 1 {
-            ret.insert("s2", grid[(row - 2, col)]);
+        if row < grid.nrows() - 2 {
+            ret.insert("e2", grid[(row + 2, col)]);
         }
 
-        if col != 0 {
-            ret.insert("w", grid[(row, col - 1)]);
+        if col >= 1 {
+            ret.insert("n", grid[(row, col - 1)]);
         }
 
-        if col != 1 {
-            ret.insert("w2", grid[(row, col - 2)]);
+        if col >= 2 {
+            ret.insert("n2", grid[(row, col - 2)]);
         }
 
-        if col != grid.ncols() {
-            ret.insert("e", grid[(row, col + 1)]);
+        if col < grid.ncols() - 1 {
+            ret.insert("s", grid[(row, col + 1)]);
         }
 
-        if col != grid.ncols() - 1 {
-            ret.insert("e2", grid[(row, col + 2)]);
+        if col < grid.ncols() - 2 {
+            ret.insert("s2", grid[(row, col + 2)]);
         }
 
         ret

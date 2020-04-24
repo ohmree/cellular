@@ -35,7 +35,7 @@ impl GameOfLife {
     pub fn new(size: (usize, usize)) -> Self {
         use GameState::*;
         let grid = Array2::<GameState>::from_elem(size, Dead);
-        GameOfLife { grid }
+        Self { grid }
     }
 
     pub fn print(&self) {
@@ -51,12 +51,12 @@ impl GameOfLife {
 impl Automaton for GameOfLife {
     type State = GameState;
 
-    fn get_view(&self) -> ArrayView2<Self::State> {
+    fn grid_view(&self) -> ArrayView2<Self::State> {
         self.grid.view()
     }
 
     fn from_array2(grid: Array2<Self::State>) -> Self {
-        GameOfLife { grid }
+        Self { grid }
     }
 
     fn next_state_of(&self, idx: (usize, usize)) -> Self::State {
@@ -69,9 +69,11 @@ impl Automaton for GameOfLife {
             .filter(|state| **state == Alive)
             .collect();
 
+        let current = self.grid_view()[idx];
         match living_cells.len() {
-            n if n < 2 || n > 3 => Dead,
-            _ => Alive,
+            2 | 3 if current == Alive => Alive,
+            3 if current == Dead => Alive,
+            _ => Dead,
         }
     }
 }
